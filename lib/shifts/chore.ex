@@ -4,15 +4,17 @@ defmodule Shifts.Chore do
   """
   alias Shifts.Tool
 
+  @default_llm Shifts.Config.get(:default_llm)
+
   @enforce_keys [:task, :output]
-  defstruct task: nil, output: nil, tools: [], llm: {}
+  defstruct task: nil, output: nil, tools: [], worker: @default_llm
 
   @typedoc "TODO"
   @type t() :: %__MODULE__{
     task: String.t(),
     output: String.t(),
     tools: list(Tool.t()),
-    llm: term(), # todo
+    worker: term() | {module(), keyword()}, # todo
   }
 
   @schema NimbleOptions.new!([
@@ -34,8 +36,8 @@ defmodule Shifts.Chore do
       default: [],
       doc: "todo"
     ],
-    llm: [
-      type: :mod_arg,
+    worker: [
+      type: :any,
       doc: "todo"
     ]
   ])
@@ -57,8 +59,9 @@ defmodule Shifts.Chore do
     struct(__MODULE__, opts)
   end
 
+  # TODO
   @spec use_tools(list(Tool.t() | module())) :: list(Tool.t())
-  def use_tools(tools) when is_list(tools) do
+  defp use_tools(tools) when is_list(tools) do
     Enum.map(tools, fn
       %Tool{} = tool -> tool
       tool_mod -> apply(tool_mod, :to_struct, [])
