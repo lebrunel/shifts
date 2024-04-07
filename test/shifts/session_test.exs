@@ -69,5 +69,51 @@ defmodule Shifts.SessionTest do
     end
   end
 
+  describe "parallel/3" do
+    setup do
+      {:ok, session: %Session{shift: :test}}
+    end
+
+    test "acceps parallel sets of instructions", %{session: session} do
+      session =
+        session
+        |> Session.parallel(:test, 1..2, fn session, i ->
+          session
+          |> Session.instruct({:a, i}, "input", task: "test", output: "test")
+          |> Session.instruct({:b, i}, "input", task: "test", output: "test")
+        end)
+
+      assert session.scope == []
+      assert MapSet.size(session.names) == 5
+
+      [:test, {:a, 1}, {:a, 2}, {:b, 1}, {:b, 2}]
+      |> Enum.all?(& MapSet.member?(session.names, &1))
+      |> assert()
+
+      assert length(session.instructions) == 1
+      assert {:parallel, :test, [set2, set1]} = hd(session.instructions)
+      assert {:chore, {:b, 1}, "input", %Chore{}} = hd(set1)
+      assert {:chore, {:b, 2}, "input", %Chore{}} = hd(set2)
+    end
+
+    test "acceps nested parallel sets of instructions", %{session: session} do
+      session =
+        session
+        |> Session.parallel(:test, 1..2, fn session, i ->
+          Session.parallel(session, {:nested, i}, 1..2, fn session, n ->
+            session
+            |> Session.instruct({:a, i, n}, "input", task: "test", output: "test")
+          end)
+        end)
+
+      assert session.scope == []
+      assert MapSet.size(session.names) == 7
+
+      [:test, {:nested, 1}, {:nested, 2}, {:a, 1, 1}, {:a, 2, 2}, {:a, 2, 1}, {:a, 2, 2}]
+      |> Enum.all?(& MapSet.member?(session.names, &1))
+      |> assert()
+    end
+
+  end
 
 end
