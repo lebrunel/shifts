@@ -52,11 +52,20 @@ defmodule Shifts.Chat do
   TODO
   """
   @spec generate_next_message(t()) :: t()
-  def generate_next_message(%__MODULE__{messages: [%{role: role} | _]} = chat)
+  def generate_next_message(%__MODULE__{llm: {llm, opts}, messages: [%{role: role} | _]} = chat)
     when role in [:user]
   do
-    # TODO
-    chat
+    opts = Keyword.merge(opts, [
+      system: chat.system,
+      tools: chat.tools,
+      messages: Enum.reverse(chat.messages),
+    ])
+
+    response = apply(llm, :generate_next_message, [opts])
+    message = apply(llm, :get_message, [response])
+    # todo - get and merge metrics
+    #metrics = apply(llm, :get_metrics, [response])
+    update_in(chat.messages, & [message | &1])
   end
 
   # TODO - better error here

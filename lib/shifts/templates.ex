@@ -24,8 +24,9 @@ defmodule Shifts.Templates do
 
   {{#input}}This is the context you're working with:
 
-  {{input}}{{/input}}
+  {{input}}
 
+  {{/input}}
   This is the expected output for your final answer: {{output}}
   """
 
