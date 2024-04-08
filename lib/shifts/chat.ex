@@ -52,16 +52,10 @@ defmodule Shifts.Chat do
   TODO
   """
   @spec generate_next_message(t()) :: t()
-  def generate_next_message(%__MODULE__{llm: {llm, opts}, messages: [%{role: role} | _]} = chat)
+  def generate_next_message(%__MODULE__{llm: {llm, _opts}, messages: [%{role: role} | _]} = chat)
     when role in [:user]
   do
-    opts = Keyword.merge(opts, [
-      system: chat.system,
-      tools: chat.tools,
-      messages: Enum.reverse(chat.messages),
-    ])
-
-    response = apply(llm, :generate_next_message, [opts])
+    response = apply(llm, :generate_next_message, [chat])
     message = apply(llm, :get_message, [response])
     # todo - get and merge metrics
     #metrics = apply(llm, :get_metrics, [response])

@@ -1,14 +1,15 @@
 defmodule Shifts.LLMs.Anthropic do
-  alias Shifts.{Config, Message, Tool}
+  alias Shifts.{Config, Chat, Message, Tool}
 
   @behaviour Shifts.LLM
 
   @impl true
-  def generate_next_message(opts) do
+  def generate_next_message(%Chat{llm: {_llm, opts}} = chat) do
     opts =
       opts
-      |> Keyword.update(:messages, [], &use_messages/1)
-      |> Keyword.update(:tools, [], &use_tools/1)
+      |> Keyword.put(:system, chat.system)
+      |> Keyword.put(:tools, use_tools(chat.tools))
+      |> Keyword.put(:messages, Enum.reverse(chat.messages) |> use_messages())
       |> remove_blank_opts([:system, :tools])
 
     with {:ok, response} <- Anthropix.chat(client(), opts) do
