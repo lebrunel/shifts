@@ -2,7 +2,7 @@ defmodule Shifts.Chore do
   @moduledoc """
   TODO
   """
-  alias Shifts.{Templates, Thread, Tool}
+  alias Shifts.{Chat, Templates, Tool}
 
   @default_llm Shifts.Config.get(:default_llm)
 
@@ -68,11 +68,11 @@ defmodule Shifts.Chore do
       {mod, args} -> {{mod, args}, chore.tools}
     end
 
-    Thread.init(llm)
-    |> Thread.put_system(to_prompt(chore, :system))
-    |> Thread.put_tools(tools)
-    |> Thread.add_message(:user, to_prompt(chore, input))
-    |> Thread.generate_next_message()
+    Chat.init(llm)
+    |> Chat.put_system(to_prompt(chore, :system))
+    |> Chat.put_tools(tools)
+    |> Chat.add_message(:user, to_prompt(chore, input))
+    |> Chat.generate_next_message()
   end
 
   @doc """

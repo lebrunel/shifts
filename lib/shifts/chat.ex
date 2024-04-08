@@ -1,4 +1,4 @@
-defmodule Shifts.Thread do
+defmodule Shifts.Chat do
   @moduledoc """
   TODO
   """
@@ -11,7 +11,8 @@ defmodule Shifts.Thread do
   @type t() :: %__MODULE__{
     llm: {module(), keyword()},
     system: String.t() | nil,
-    messages: list()
+    tools: list(Tool.t()),
+    messages: list(Message.t() | t()),
   }
 
   @doc """
@@ -25,34 +26,37 @@ defmodule Shifts.Thread do
   TODO
   """
   @spec put_system(t(), String.t() | nil) :: t()
-  def put_system(%__MODULE__{} = thread, nil), do: thread
-  def put_system(%__MODULE__{} = thread, prompt) when is_binary(prompt),
-    do: put_in(thread.system, prompt)
+  def put_system(%__MODULE__{} = chat, nil), do: chat
+  def put_system(%__MODULE__{} = chat, prompt) when is_binary(prompt),
+    do: put_in(chat.system, prompt)
 
   @spec put_tools(t(), list(Tool.t())) :: t()
-  def put_tools(%__MODULE__{} = thread, tools),
-    do: put_in(thread.tools, tools)
+  def put_tools(%__MODULE__{} = chat, tools),
+    do: put_in(chat.tools, tools)
 
   @doc """
   TODO
   """
   @spec add_message(t(), Message.t()) :: t()
-  def add_message(%__MODULE__{} = thread, %Message{} = message),
-    do: update_in(thread.messages, & [message | &1])
+  def add_message(%__MODULE__{} = chat, %Message{} = message),
+    do: update_in(chat.messages, & [message | &1])
 
   @doc """
   TODO
   """
   @spec add_message(t(), Message.role(), String.t()) :: t()
-  def add_message(%__MODULE__{} = thread, role, content),
-    do: add_message(thread, Message.new(role: role, content: content))
+  def add_message(%__MODULE__{} = chat, role, content),
+    do: add_message(chat, Message.new(role: role, content: content))
 
+  @doc """
+  TODO
+  """
   @spec generate_next_message(t()) :: t()
-  def generate_next_message(%__MODULE__{messages: [%{role: role} | _]} = thread)
+  def generate_next_message(%__MODULE__{messages: [%{role: role} | _]} = chat)
     when role in [:user]
   do
     # TODO
-    thread
+    chat
   end
 
   # TODO - better error here
