@@ -2,7 +2,7 @@ defmodule Shifts.Chore do
   @moduledoc """
   TODO
   """
-  alias Shifts.Tool
+  alias Shifts.{Templates, Thread, Tool}
 
   @default_llm Shifts.Config.get(:default_llm)
 
@@ -58,6 +58,46 @@ defmodule Shifts.Chore do
 
     struct(__MODULE__, opts)
   end
+
+  @doc """
+  TODO
+  """
+  @spec execute(t(), String.t() | nil) :: Thread.t()
+  def execute(%__MODULE__{} = chore, input \\ nil) do
+    {llm, tools} = case chore.worker do
+      {mod, args} -> {{mod, args}, chore.tools}
+    end
+
+    Thread.init(llm)
+    |> Thread.put_system(to_prompt(chore, :system))
+    |> Thread.put_tools(tools)
+    |> Thread.add_message(:user, to_prompt(chore, input))
+    |> Thread.generate_next_message()
+  end
+
+  @doc """
+  TODO
+  """
+  @spec to_prompt(t(), String.t() | :system | nil) :: String.t() | nil
+  def to_prompt(chore, input \\ nil)
+
+  def to_prompt(%__MODULE__{}, :system), do: nil
+
+  def to_prompt(%__MODULE__{} = chore, input) do
+    params = %{
+      "task" => String.trim(chore.task),
+      "output" => String.trim(chore.output),
+      "input" => input,
+    }
+
+    Templates.get(:chore_prompt)
+    |> ExMustache.render(params)
+    |> IO.iodata_to_binary()
+    |> String.trim()
+  end
+
+
+  ### Internal
 
   # TODO
   @spec use_tools(list(Tool.t() | module())) :: list(Tool.t())

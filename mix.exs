@@ -21,6 +21,8 @@ defmodule Shifts.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:anthropix, "~> 0.1"},
+      {:ex_mustache, "~> 0.2"},
       {:nimble_options, "~> 1.1"},
     ]
   end
