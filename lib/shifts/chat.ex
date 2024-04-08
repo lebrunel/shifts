@@ -2,6 +2,7 @@ defmodule Shifts.Chat do
   @moduledoc """
   TODO
   """
+  require Shifts.Tool
   alias Shifts.{Message, Tool}
 
   @enforce_keys [:llm]
@@ -52,9 +53,12 @@ defmodule Shifts.Chat do
   TODO
   """
   @spec generate_next_message(t()) :: t()
-  def generate_next_message(%__MODULE__{llm: {llm, _opts}, messages: [%{role: role} | _]} = chat)
-    when role in [:user]
-  do
+  def generate_next_message(
+    %__MODULE__{
+      llm: {llm, _opts},
+      messages: [%{role: :user} | _]
+    } = chat
+  ) do
     response = apply(llm, :generate_next_message, [chat])
     message = apply(llm, :get_message, [response])
     # todo - get and merge metrics
@@ -65,5 +69,33 @@ defmodule Shifts.Chat do
   # TODO - better error here
   def generate_next_message(%__MODULE__{}), do: raise "cannot generate message"
 
+  @doc """
+  TODO
+  """
+  @spec handle_tool_use(t()) :: t()
+  def handle_tool_use(
+    %__MODULE__{
+      tools: tools,
+      messages: [%{role: :assistant, records: records} | _]
+    } = chat
+  ) when length(records) > 0 do
+    message = Enum.reduce(records, Message.new(role: :user), fn {:tool_use, id, name, input}, msg ->
+      # todo - handle if tool not found
+      # todo - handle if tool raises
+      with %Tool{} = tool <- Enum.find(tools, & &1.name == name) do
+        output = apply(tool.function, [nil, input])
+        # todo - assert tool returns with string
+        result = Tool.tool_result(id: id, name: name, output: output)
+        Message.put_record(msg, result)
+      end
+    end)
+
+    chat
+    |> add_message(message)
+    |> generate_next_message()
+    |> handle_tool_use()
+  end
+
+  def handle_tool_use(%__MODULE__{} = chat), do: chat
 
 end

@@ -73,6 +73,7 @@ defmodule Shifts.Chore do
     |> Chat.put_tools(tools)
     |> Chat.add_message(:user, to_prompt(chore, input))
     |> Chat.generate_next_message()
+    |> Chat.handle_tool_use()
   end
 
   @doc """

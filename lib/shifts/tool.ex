@@ -2,6 +2,7 @@ defmodule Shifts.Tool do
   @moduledoc """
   TODO
   """
+  require Record
   alias Shifts.{Job, Thread}
 
   @enforce_keys [:name, :description, :function]
@@ -20,10 +21,17 @@ defmodule Shifts.Tool do
   @type args() :: %{optional(String.t()) => arg_type()}
   @typep arg_type() :: String.t() | integer() | float()
 
+  Record.defrecord(:tool_use, id: nil, name: nil, input: %{})
+  Record.defrecord(:tool_result, id: nil, name: nil, output: nil)
+
+  @type tool_record() :: tool_call() | tool_result()
+  @type tool_call() :: record(:tool_use, id: String.t(), name: String.t(), input: args())
+  @type tool_result() :: record(:tool_result, id: String.t(), name: String.t(), output: String.t())
+
 
   @schema NimbleOptions.new!([
     name: [
-      type: :atom,
+      type: :string,
       required: true,
       doc: "todo"
     ],
@@ -83,6 +91,16 @@ defmodule Shifts.Tool do
   ### Macros
 
   @doc """
+  Sets the tool name.
+  """
+  @spec name(String.t()) :: Macro.t()
+  defmacro name(value) when is_binary(value) do
+    quote do
+      Module.put_attribute(__MODULE__, :name, unquote(value))
+    end
+  end
+
+  @doc """
   Sets the tool description.
   """
   @spec description(String.t()) :: Macro.t()
@@ -116,6 +134,10 @@ defmodule Shifts.Tool do
   # and triggers before_compile callback
   defmacro __using__(_) do
     quote do
+      tool_name =
+        to_string(__MODULE__) |> String.replace(".", "_")
+
+      Module.put_attribute(__MODULE__, :name, tool_name)
       Module.register_attribute(__MODULE__, :description, accumulate: false)
       Module.register_attribute(__MODULE__, :params, accumulate: true)
       import Shifts.Tool, only: [description: 1, param: 3]
@@ -129,7 +151,7 @@ defmodule Shifts.Tool do
   defmacro __before_compile__(_env) do
     quote do
       @tool Shifts.Tool.new([
-        name: __MODULE__,
+        name: @name,
         description: @description,
         params: @params,
         function: &__MODULE__.call/2,
