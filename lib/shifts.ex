@@ -2,9 +2,9 @@ defmodule Shifts do
   @moduledoc """
   Documentation for `Shifts`.
   """
-  alias Shifts.{Chat, Chore, Shift}
+  alias Shifts.{ChatResult, Chore, Shift, ShiftResult}
 
-  @spec process_job(module(), term()) :: Shift.t()
+  @spec process_job(module(), term()) :: ShiftResult.t()
   def process_job(module, input) do
     unless function_exported?(module, :work, 2) do
       # todo - better exception
@@ -13,31 +13,37 @@ defmodule Shifts do
 
     shift = apply(module, :work, [%Shift{}, input])
 
-    shift.operations
+    results = shift.operations
     |> Enum.reverse()
-    |> Enum.reduce(shift, fn {name, operation}, shift ->
-      chat = process_operation(operation, shift)
-      update_in(shift.results, & Map.put(&1, name, Chat.finalize(chat)))
+    |> Enum.reduce(%ShiftResult{shift: shift}, fn {name, operation}, results ->
+      result = process_operation(operation, results)
+      update_in(results.chats, & [{name, result} | &1])
     end)
+
+    with {_name, %ChatResult{output: output}} <- hd(results.chats) do
+      results
+      |> Map.put(:output, output)
+      |> Map.update!(:chats, &Enum.reverse/1)
+    end
   end
 
-  @spec process_operation(Shift.operation(), Shift.t()) :: Chat.t()
-  def process_operation({%Chore{} = chore, input}, %Shift{} = shift)
-    when is_function(input, 1)
+  @spec process_operation(Shift.operation(), ShiftResult.t()) :: ChatResult.t()
+  def process_operation(
+    {%Chore{} = chore, input},
+    %ShiftResult{chats: chats} = result
+  ) when is_function(input, 1)
   do
-    results =
-      shift.results
-      |> Enum.map(fn {key, {val, _chat}} -> {key, val} end)
-      |> Enum.into(%{})
+    results_map =
+      Enum.reduce(chats, %{}, fn {name, %ChatResult{output: output}}, res ->
+        Map.put(res, name, output)
+      end)
 
     # todo - handle if the input function errors
-    process_operation({chore, input.(results)}, shift)
+    process_operation({chore, input.(results_map)}, result)
   end
 
-  def process_operation({%Chore{} = chore, input}, %Shift{} = _shift)
-    when is_binary(input)
-  do
-    Chore.execute(chore, input)
-  end
+  def process_operation({%Chore{} = chore, input}, %ShiftResult{})
+    when is_binary(input),
+    do: Chore.execute(chore, input)
 
 end

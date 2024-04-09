@@ -2,7 +2,7 @@ defmodule Shifts.Chore do
   @moduledoc """
   TODO
   """
-  alias Shifts.{Chat, Templates, Tool}
+  alias Shifts.{Chat, ChatResult, Shift, Templates, Tool}
 
   @default_llm Shifts.Config.get(:default_llm)
 
@@ -62,7 +62,7 @@ defmodule Shifts.Chore do
   @doc """
   TODO
   """
-  @spec execute(t(), String.t() | nil) :: Thread.t()
+  @spec execute(t(), String.t() | nil) :: ChatResult.t()
   def execute(%__MODULE__{} = chore, input \\ nil) do
     {llm, tools} = case chore.worker do
       {mod, args} -> {{mod, args}, chore.tools}
@@ -73,7 +73,8 @@ defmodule Shifts.Chore do
     |> Chat.put_tools(tools)
     |> Chat.add_message(:user, to_prompt(chore, input))
     |> Chat.generate_next_message()
-    |> Chat.handle_tool_use()
+    |> Chat.handle_tool_use(%Shift{})
+    |> Chat.finalize()
   end
 
   @doc """

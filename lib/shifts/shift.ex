@@ -4,13 +4,11 @@ defmodule Shifts.Shift do
   """
   alias Shifts.Chore
 
-  defstruct operations: [],
-            results: %{}
+  defstruct operations: []
 
   @typedoc "TODO"
   @type t() :: %__MODULE__{
-    operations: list({operation_name(), operation()}),
-    results: map(),
+    operations: list({operation_name(), operation()})
   }
 
   @type operation() ::
