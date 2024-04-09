@@ -3,7 +3,7 @@ defmodule Shifts.Tool do
   TODO
   """
   require Record
-  alias Shifts.{Job, Thread}
+  alias Shifts.{Shift, Thread}
 
   @enforce_keys [:name, :description, :function]
   defstruct name: nil, description: nil, params: [], function: nil
@@ -13,7 +13,7 @@ defmodule Shifts.Tool do
     name: String.t(),
     description: String.t(),
     params: list(param()),
-    function: (Job.t(), args() -> String.t() | Thread.t()),
+    function: (Shift.t(), args() -> String.t() | Thread.t()),
   }
 
   @type param() :: {atom(), param_type(), String.t()}
@@ -85,7 +85,7 @@ defmodule Shifts.Tool do
 
   Receives the context `t:Shifts.Shift.t/0` and a map of arguments.
   """
-  @callback call(job :: Job.t(), args :: map()) :: String.t() | Thread.t()
+  @callback call(shift :: Shift.t(), args :: map()) :: String.t() | Thread.t()
 
 
   ### Macros
