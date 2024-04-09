@@ -103,4 +103,24 @@ defmodule Shifts.Chat do
 
   def handle_tool_use(%__MODULE__{} = chat), do: chat
 
+  @doc """
+  TODO
+  """
+  @spec finalize(t()) :: {String.t(), t()}
+  def finalize(%__MODULE__{} = chat) do
+    result =
+      hd(chat.messages)
+      |> Map.get(:content)
+
+    {result, invert(chat)}
+  end
+
+  defp invert(%__MODULE__{} = chat) do
+    update_in(chat.messages, fn messages ->
+      messages
+      |> Enum.map(& if match?(%__MODULE__{}, &1), do: invert(&1), else: &1)
+      |> Enum.reverse()
+    end)
+  end
+
 end
