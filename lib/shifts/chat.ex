@@ -2,6 +2,7 @@ defmodule Shifts.Chat do
   @moduledoc """
   TODO
   """
+  require Logger
   require Shifts.Tool
   alias Shifts.{Message, Tool}
 
@@ -80,13 +81,17 @@ defmodule Shifts.Chat do
     } = chat
   ) when length(records) > 0 do
     message = Enum.reduce(records, Message.new(role: :user), fn {:tool_use, id, name, input}, msg ->
-      # todo - handle if tool not found
       # todo - handle if tool raises
       with %Tool{} = tool <- Enum.find(tools, & &1.name == name) do
         output = apply(tool.function, [nil, input])
         # todo - assert tool returns with string
         result = Tool.tool_result(id: id, name: name, output: output)
         Message.put_record(msg, result)
+      else
+        # Tool not found. Just ignore it and hope for the best
+        nil ->
+          Logger.error("Tool not found for tool_use: #{name}")
+          msg
       end
     end)
 

@@ -24,6 +24,7 @@ defmodule Shifts.MixProject do
       {:anthropix, "~> 0.2"},
       {:ex_mustache, "~> 0.2"},
       {:nimble_options, "~> 1.1"},
+      {:ollama, "~> 0.5"},
     ]
   end
 end

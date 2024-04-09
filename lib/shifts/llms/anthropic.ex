@@ -10,13 +10,10 @@ defmodule Shifts.LLMs.Anthropic do
       opts
       |> Keyword.put(:system, chat.system)
       |> Keyword.put(:tools, use_tools(chat.tools))
-      |> Keyword.put(:messages, Enum.reverse(chat.messages) |> use_messages())
+      |> Keyword.put(:messages, use_messages(chat.messages))
       |> remove_blank_opts([:system, :tools])
 
-    dbg opts
-
     with {:ok, response} <- Anthropix.chat(client(), opts) do
-      dbg response
       response
     else
       {:error, error} -> raise error
@@ -59,7 +56,9 @@ defmodule Shifts.LLMs.Anthropic do
   end
 
   defp use_messages(messages) do
-    Enum.map(messages, fn
+    messages
+    |> Enum.reverse()
+    |> Enum.map(fn
       %Message{role: role, content: content, records: []} ->
         %{role: to_string(role), content: content}
 
@@ -69,16 +68,13 @@ defmodule Shifts.LLMs.Anthropic do
           content -> [%{type: "text", text: content}]
         end
 
-        content =
-          records
-          |> Enum.reduce(init, fn
-            {:tool_use, id, name, input}, content ->
-              [%{type: "tool_use", id: id, name: name, input: input} | content]
+        content = Enum.reduce(records, init, fn
+          {:tool_use, id, name, input}, content ->
+            [%{type: "tool_use", id: id, name: name, input: input} | content]
 
-            {:tool_result, id, _name, output}, content ->
-              [%{type: "tool_result", tool_use_id: id, content: output} | content]
-            end)
-          |> Enum.reverse()
+          {:tool_result, id, _name, output}, content ->
+            [%{type: "tool_result", tool_use_id: id, content: output} | content]
+        end)
 
         %{role: to_string(role), content: content}
     end)
@@ -87,7 +83,7 @@ defmodule Shifts.LLMs.Anthropic do
   defp use_tools(tools) do
     Enum.map(tools, fn %Tool{} = tool ->
       %{
-        name: to_string(tool.name),
+        name: tool.name,
         description: String.trim(tool.description),
         input_schema: %{
           type: "object",

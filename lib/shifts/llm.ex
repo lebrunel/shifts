@@ -10,7 +10,7 @@ defmodule Shifts.LLM do
   @doc """
   TODO
   """
-  @callback generate_next_message(Chat.t()) :: response()
+  @callback generate_next_message(chat :: Chat.t()) :: response()
 
   @doc """
   TODO
