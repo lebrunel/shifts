@@ -17,7 +17,7 @@ defmodule Shifts do
   | --------- | -----------------------------------------------------------| ------------------- |
   | `0.0.x`   | For the brave and adventurous - expect breaking changes.   | **👈🏻 We are here!**  |
   | `0.x.0`   | Focus on better docs with less frequent breaking changes.  |                     |
-  | > `1.0.0` | 🚀 Launched. Great docs, great dev experience, stable APIs. |                     |
+  | `1.0.0` + | 🚀 Launched. Great docs, great dev experience, stable APIs. |                     |
 
   ### Currently supported LLMs
 
