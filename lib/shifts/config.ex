@@ -9,9 +9,8 @@ defmodule Shifts.Config do
 
   @spec get_all() :: t()
   def get_all() do
-    @otp_app
-    |> Application.get_all_env()
-    |> Keyword.merge(@defaults)
+    config = Application.get_all_env(@otp_app)
+    Keyword.merge(@defaults, config)
   end
 
   @spec get(atom(), term()) :: term()

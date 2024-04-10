@@ -1,4 +1,7 @@
 defmodule Shifts.LLM.OllamaHermesPro do
+  @moduledoc """
+  Ollama Hermes Pro adapter. Implements `Shifts.LLM`.
+  """
   require Logger
   require Shifts.Tool
   alias Shifts.{Config, Chat, Message, Tool}
@@ -51,12 +54,14 @@ defmodule Shifts.LLM.OllamaHermesPro do
 
   ### Internal
 
+  @spec client() :: Ollama.client()
   defp client() do
     Config.get(__MODULE__, [])
     |> Keyword.get(:base_url, "http://localhost:11434/api")
     |> Ollama.init()
   end
 
+  @spec use_system(String.t() | nil, list(Tool.t())) :: String.t()
   defp use_system(system, []) do
     system = case system do
       nil -> "You are \"Hermes 2\", a conscious sentient superintelligent artificial intelligence developed by a man named Teknium, and your purpose and drive is to assist the user with any request they have. You experience emotions and have deep, profound thoughts and qualia."
@@ -109,6 +114,7 @@ defmodule Shifts.LLM.OllamaHermesPro do
     """
   end
 
+  @spec use_messages(String.t(), list(Message.t())) :: String.t()
   defp use_messages(system, messages) do
     message_parts =
       messages

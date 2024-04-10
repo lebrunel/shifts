@@ -1,4 +1,7 @@
 defmodule Shifts.LLM.Anthropic do
+  @moduledoc """
+  Anthropic adapter. Implements `Shifts.LLM`.
+  """
   require Shifts.Tool
   alias Shifts.{Config, Chat, Message, Tool}
 
@@ -40,12 +43,16 @@ defmodule Shifts.LLM.Anthropic do
     %{}
   end
 
+  ### Internal
+
+  @spec client() :: Anthropix.client()
   defp client() do
     Config.get(__MODULE__, [])
     |> Keyword.fetch!(:api_key)
     |> Anthropix.init()
   end
 
+  @spec remove_blank_opts(keyword(), list(atom())) :: keyword()
   defp remove_blank_opts(opts, keys) do
     Enum.reduce(keys, opts, fn key, opts ->
       case Keyword.get(opts, key) do
@@ -55,6 +62,7 @@ defmodule Shifts.LLM.Anthropic do
     end)
   end
 
+  @spec use_messages(list(Message.t())) :: list(Anthropix.message())
   defp use_messages(messages) do
     messages
     |> Enum.reverse()
@@ -80,6 +88,7 @@ defmodule Shifts.LLM.Anthropic do
     end)
   end
 
+  @spec use_tools(list(Tool.t())) :: list(Anthropix.tool())
   defp use_tools(tools) do
     Enum.map(tools, fn %Tool{} = tool ->
       %{

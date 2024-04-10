@@ -5,6 +5,9 @@ defmodule Shifts.LLM do
   alias Shifts.{Chat, Message}
 
   @typedoc "TODO"
+  @type adapter() :: {module(), keyword()}
+
+  @typedoc "TODO"
   @type response() :: map()
 
   @doc """

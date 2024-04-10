@@ -2,19 +2,17 @@ defmodule Shifts.Chore do
   @moduledoc """
   TODO
   """
-  alias Shifts.{Chat, ChatResult, Shift, Templates, Tool}
-
-  @default_llm Shifts.Config.get(:default_llm)
+  alias Shifts.{Chat, ChatResult, LLM, Shift, Templates, Tool}
 
   @enforce_keys [:task, :output]
-  defstruct task: nil, output: nil, tools: [], worker: @default_llm
+  defstruct task: nil, output: nil, tools: [], llm: nil
 
   @typedoc "TODO"
   @type t() :: %__MODULE__{
     task: String.t(),
     output: String.t(),
     tools: list(Tool.t()),
-    worker: term() | {module(), keyword()}, # todo
+    llm: LLM.adapter(),
   }
 
   @schema NimbleOptions.new!([
@@ -36,8 +34,8 @@ defmodule Shifts.Chore do
       default: [],
       doc: "todo"
     ],
-    worker: [
-      type: :any,
+    llm: [
+      type: :mod_arg,
       doc: "todo"
     ]
   ])
@@ -55,6 +53,7 @@ defmodule Shifts.Chore do
       opts
       |> NimbleOptions.validate!(@schema)
       |> Keyword.update!(:tools, &use_tools/1)
+      |> Keyword.put_new(:llm, Shifts.Config.get(:default_llm))
 
     struct(__MODULE__, opts)
   end
@@ -64,13 +63,9 @@ defmodule Shifts.Chore do
   """
   @spec execute(t(), String.t() | nil) :: ChatResult.t()
   def execute(%__MODULE__{} = chore, input \\ nil) do
-    {llm, tools} = case chore.worker do
-      {mod, args} -> {{mod, args}, chore.tools}
-    end
-
-    Chat.init(llm)
+    Chat.init(chore.llm)
     |> Chat.put_system(to_prompt(chore, :system))
-    |> Chat.put_tools(tools)
+    |> Chat.put_tools(chore.tools)
     |> Chat.add_message(:user, to_prompt(chore, input))
     |> Chat.generate_next_message()
     |> Chat.handle_tool_use(%Shift{})
