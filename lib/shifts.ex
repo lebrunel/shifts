@@ -1,11 +1,49 @@
 defmodule Shifts do
   @moduledoc """
-  Documentation for `Shifts`.
+  Shifts is a framework for composing autonomous **agent** workflows, using a
+  mixture of LLM backends.
+
+  - 🤖 **Automate your chores** - have AI agents handle the mundane so you can focus on the things you care about.
+  - 💪🏻 **Agents with superpowers** - create tools, so your agents can interact with the Web or internal APIs and systems.
+  - 🧩 **Flexible and adaptable** - easily compose and modify workflows to suit your specific needs.
+  - 🤗 **Delightful simplicity** - pipe instructions together using just plain English and intuitive APIs.
+  - 🎨 **Mix and match** - Plug into different LLMs even within the same workflow so you are always using the right tool for job.
+
+  ### Current dev status
+
+  | Version   | Stability                                                  | Status              |
+  | --------- | -----------------------------------------------------------| ------------------- |
+  | `0.0.x`   | For the brave and adventurous - expect breaking changes.   | **👈🏻 We are here!**  |
+  | `0.x.0`   | Focus on better docs with less frequent breaking changes.  |                     |
+  | > `1.0.0` | 🚀 Launched. Great docs, great dev experience, stable APIs. |                     |
+
+  ### Currently supported LLMs
+
+  - Anthropic / Claude 3 - **Recommended**
+  - Ollama - Hermes Pro
+
+  ## Installation
+
+  The package can be installed by adding `shifts` to your list of dependencies
+  in `mix.exs`.
+
+  ```elixir
+  def deps do
+    [
+      {:shifts, "~> #{Keyword.fetch!(Mix.Project.config(), :version)}"}
+    ]
+  end
+  ```
+
+  Documentation to follow...
   """
   alias Shifts.{ChatResult, Chore, Shift, ShiftResult}
 
-  @spec process_job(module(), term()) :: ShiftResult.t()
-  def process_job(module, input) do
+  @doc """
+  TODO
+  """
+  @spec process(module(), term()) :: ShiftResult.t()
+  def process(module, input) do
     unless function_exported?(module, :work, 2) do
       # todo - better exception
       raise "not a shift module"
@@ -27,22 +65,20 @@ defmodule Shifts do
     end
   end
 
+  # TODO
+  # todo - handle each op
   @spec process_operation(Shift.operation(), ShiftResult.t()) :: ChatResult.t()
-  def process_operation(
-    {%Chore{} = chore, input},
-    %ShiftResult{chats: chats} = result
-  ) when is_function(input, 1)
+  defp process_operation(
+    {%Chore{} = chore, input_fun},
+    %ShiftResult{} = result
+  ) when is_function(input_fun, 1)
   do
-    results_map =
-      Enum.reduce(chats, %{}, fn {name, %ChatResult{output: output}}, res ->
-        Map.put(res, name, output)
-      end)
-
     # todo - handle if the input function errors
-    process_operation({chore, input.(results_map)}, result)
+    input = input_fun.(ShiftResult.to_outputs(result))
+    process_operation({chore, input}, result)
   end
 
-  def process_operation({%Chore{} = chore, input}, %ShiftResult{})
+  defp process_operation({%Chore{} = chore, input}, %ShiftResult{})
     when is_binary(input),
     do: Chore.execute(chore, input)
 
