@@ -1,5 +1,7 @@
 defmodule Shifts do
   @moduledoc """
+  ![License](https://img.shields.io/github/license/lebrunel/shifts?color=informational)
+
   Shifts is a framework for composing autonomous **agent** workflows, using a
   mixture of LLM backends.
 
