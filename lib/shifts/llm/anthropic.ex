@@ -1,4 +1,4 @@
-defmodule Shifts.LLMs.Anthropic do
+defmodule Shifts.LLM.Anthropic do
   require Shifts.Tool
   alias Shifts.{Config, Chat, Message, Tool}
 

@@ -1,4 +1,4 @@
-defmodule Shifts.LLMs.Ollama do
+defmodule Shifts.LLM.OllamaHermesPro do
   require Logger
   require Shifts.Tool
   alias Shifts.{Config, Chat, Message, Tool}
@@ -48,8 +48,6 @@ defmodule Shifts.LLMs.Ollama do
   def get_metrics(_response) do
     %{}
   end
-
-
 
   ### Internal
 

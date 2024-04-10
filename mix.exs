@@ -11,9 +11,7 @@ defmodule Shifts.MixProject do
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      docs: [
-        main: "Shifts"
-      ],
+      docs: docs(),
       package: [
         name: "shifts",
         files: ~w(lib .formatter.exs mix.exs README.md LICENSE),
@@ -36,11 +34,21 @@ defmodule Shifts.MixProject do
   defp deps do
     [
       {:anthropix, "~> 0.2"},
-      {:ex_doc, "~> 0.31", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.32", only: :dev, runtime: false},
       {:ex_mustache, "~> 0.2"},
       {:jason, "~> 1.4"},
       {:nimble_options, "~> 1.1"},
       {:ollama, "~> 0.5"},
+    ]
+  end
+
+  # ExDoc config
+  defp docs do
+    [
+      main: "Shifts",
+      groups_for_modules: [
+        "LLM Adapters": ~r/^Shifts\.LLM\..+$/
+      ]
     ]
   end
 end

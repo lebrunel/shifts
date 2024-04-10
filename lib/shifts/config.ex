@@ -2,7 +2,7 @@ defmodule Shifts.Config do
   @otp_app :shifts
 
   @defaults [
-    default_llm: {Shifts.LLMs.Anthropic, model: "claude-3-haiku-20240307"}
+    default_llm: {Shifts.LLM.Anthropic, model: "claude-3-haiku-20240307"}
   ]
 
   @type t() :: keyword()
