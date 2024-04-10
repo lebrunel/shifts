@@ -13,6 +13,7 @@ defmodule Shifts.Shift do
 
   @type operation() ::
     {Chore.t(), chore_input()} |
+    {:async, list(t())} |
     {:each, list(t())}
 
   @type operation_name() :: atom()
@@ -58,6 +59,20 @@ defmodule Shifts.Shift do
   def chore(%__MODULE__{} = shift, name, input, opts) when is_list(opts),
     do: chore(shift, name, input, Chore.new(opts))
 
+  @doc """
+  TODO
+  """
+  @spec async(t(), operation_name(), Enumerable.t(), (t(), term() -> t())) :: t()
+  def async(%__MODULE__{} = shift, name, enum, callback)
+    when is_function(callback, 2)
+  do
+    children = Enum.reduce(enum, [], fn value, shifts ->
+      child_shift = callback.(%__MODULE__{}, value)
+      [child_shift | shifts]
+    end)
+
+    add_operation(shift, name, {:async, children})
+  end
 
   @doc """
   TODO

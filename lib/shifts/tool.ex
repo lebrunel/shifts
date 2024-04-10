@@ -135,7 +135,7 @@ defmodule Shifts.Tool do
   defmacro __using__(_) do
     quote do
       tool_name =
-        to_string(__MODULE__) |> String.replace(".", "_")
+        inspect(__MODULE__) |> String.replace(".", "_")
 
       Module.put_attribute(__MODULE__, :name, tool_name)
       Module.register_attribute(__MODULE__, :description, accumulate: false)

@@ -51,14 +51,23 @@ defmodule Shifts do
       raise "not a shift module"
     end
 
-    shift = apply(module, :work, [%Shift{}, input])
+    %Shift{}
+    |> module.work(input)
+    |> process_shift()
+  end
 
-    results = shift.operations
-    |> Enum.reverse()
-    |> Enum.reduce(%ShiftResult{shift: shift}, fn {name, operation}, results ->
-      result = process_operation(operation, results)
-      update_in(results.chats, & [{name, result} | &1])
-    end)
+  @doc """
+  TODO
+  """
+  @spec process_shift(Shift.t()) :: ShiftResult.t()
+  def process_shift(%Shift{operations: operations} = shift) do
+    results =
+      operations
+      |> Enum.reverse()
+      |> Enum.reduce(%ShiftResult{shift: shift}, fn {name, operation}, results ->
+        result = process_operation(operation, results)
+        update_in(results.chats, & [{name, result} | &1])
+      end)
 
     with {_name, %ChatResult{output: output}} <- hd(results.chats) do
       results
@@ -83,5 +92,16 @@ defmodule Shifts do
   defp process_operation({%Chore{} = chore, input}, %ShiftResult{})
     when is_binary(input),
     do: Chore.execute(chore, input)
+
+  defp process_operation({:async, shifts}, %ShiftResult{}) do
+    shifts
+    |> Enum.map(fn shift ->
+      Task.async(fn -> process_shift(shift) end)
+    end)
+    |> Task.await_many(:infinity)
+  end
+
+  defp process_operation({:each, shifts}, %ShiftResult{}),
+    do: Enum.map(shifts, &process_shift/1)
 
 end
