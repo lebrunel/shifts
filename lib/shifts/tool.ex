@@ -70,6 +70,17 @@ defmodule Shifts.Tool do
   @doc """
   TODO
   """
+  @spec use_tools(list(t() | module())) :: list(t())
+  def use_tools(tools) when is_list(tools) do
+    Enum.map(tools, fn
+      %__MODULE__{} = tool -> tool
+      mod when is_atom(mod) -> apply(mod, :to_struct, [])
+    end)
+  end
+
+  @doc """
+  TODO
+  """
   @spec validate_mod(term()) :: {:ok, term()} | {:error, String.t()}
   def validate_mod(tool_mod) do
     if is_atom(tool_mod) and :erlang.function_exported(tool_mod, :to_struct, 0),

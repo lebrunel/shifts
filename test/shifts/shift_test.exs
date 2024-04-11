@@ -67,6 +67,49 @@ defmodule Shifts.ShiftTest do
     end
   end
 
+  describe "async/4" do
+    setup do
+      {:ok, shift: %Shift{}}
+    end
+
+    test "creates parallel sets of child shifts", %{shift: shift} do
+      shift =
+        shift
+        |> Shift.async(:test, 1..2, fn shift, _i ->
+          shift
+          |> Shift.chore(:a, "input", task: "test", output: "test")
+          |> Shift.chore(:b, "input", task: "test", output: "test")
+        end)
+
+      assert length(shift.operations) == 1
+      assert {:test, {:async, [child | _] = shifts}} = hd(shift.operations)
+      assert length(shifts) == 2
+      assert length(child.operations) == 2
+      assert {:b, {%Chore{}, "input"}} = hd(child.operations)
+    end
+
+    test "creates nested sets of child shifts", %{shift: shift} do
+      shift =
+        shift
+        |> Shift.chore(:test, "input", task: "test", output: "test")
+        |> Shift.async(:children, 1..2, fn shift, _i ->
+          shift
+          |> Shift.chore(:test, "input", task: "test", output: "test")
+          |> Shift.async(:children, 1..2, fn shift, _i ->
+            Shift.chore(shift, :test, "input", task: "test", output: "test")
+          end)
+        end)
+
+      assert length(shift.operations) == 2
+      assert {:children, {:async, [child | _] = shifts}} = hd(shift.operations)
+      assert length(shifts) == 2
+      assert length(child.operations) == 2
+      assert {:children, {:async, [child | _] = shifts}} = hd(child.operations)
+      assert length(shifts) == 2
+      assert length(child.operations) == 1
+      assert {:test, {%Chore{}, "input"}} = hd(child.operations)
+    end
+  end
 
   describe "each/4" do
     setup do
@@ -89,7 +132,7 @@ defmodule Shifts.ShiftTest do
       assert {:b, {%Chore{}, "input"}} = hd(child.operations)
     end
 
-    test "creates nests sets of child shifts", %{shift: shift} do
+    test "creates nested sets of child shifts", %{shift: shift} do
       shift =
         shift
         |> Shift.chore(:test, "input", task: "test", output: "test")

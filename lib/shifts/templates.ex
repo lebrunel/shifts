@@ -23,12 +23,18 @@ defmodule Shifts.Templates do
   template :chore_prompt, """
   {{task}}
 
-  {{#input}}This is the context you're working with:
-
-  {{input}}
+  {{#input}}Input: {{input}}
 
   {{/input}}
   This is the expected output for your final answer: {{output}}
+  """
+
+  template :worker_prompt, """
+  Your role is {{role}}.
+  {{#story}}{{story}}
+  {{/story}}
+
+  Your personal goal: {{goal}}
   """
 
   @doc """

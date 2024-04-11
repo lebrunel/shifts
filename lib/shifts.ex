@@ -44,15 +44,11 @@ defmodule Shifts do
   @doc """
   TODO
   """
-  @spec process(module(), term()) :: ShiftResult.t()
-  def process(module, input) do
-    unless function_exported?(module, :work, 2) do
-      # todo - better exception
-      raise "not a shift module"
-    end
-
-    %Shift{}
-    |> module.work(input)
+  @spec start_shift(module(), term(), keyword()) :: ShiftResult.t()
+  def start_shift(shift_mod, input, opts \\ []) do
+    opts
+    |> shift_mod.init()
+    |> shift_mod.work(input)
     |> process_shift()
   end
 
@@ -78,7 +74,7 @@ defmodule Shifts do
 
   # TODO
   # todo - handle each op
-  @spec process_operation(Shift.operation(), ShiftResult.t()) :: ChatResult.t()
+  @spec process_operation(Shift.operation(), ShiftResult.t()) :: ChatResult.t() | list(ShiftResult.t())
   defp process_operation(
     {%Chore{} = chore, input_fun},
     %ShiftResult{} = result

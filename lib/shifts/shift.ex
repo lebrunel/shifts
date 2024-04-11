@@ -2,13 +2,14 @@ defmodule Shifts.Shift do
   @moduledoc """
   TODO
   """
-  alias Shifts.Chore
+  alias Shifts.{Chore, Worker}
 
-  defstruct operations: []
+  defstruct operations: [], workers: []
 
   @typedoc "TODO"
   @type t() :: %__MODULE__{
-    operations: list({operation_name(), operation()})
+    operations: list({operation_name(), operation()}),
+    workers: list() # todo
   }
 
   @type operation() ::
@@ -31,6 +32,11 @@ defmodule Shifts.Shift do
   @doc """
   TODO
   """
+  @callback init(shift :: t(), opts :: keyword()) :: t()
+
+  @doc """
+  TODO
+  """
   @callback work(shift :: t(), input :: term()) :: t()
 
   defmacro __using__(_) do
@@ -38,6 +44,13 @@ defmodule Shifts.Shift do
       alias Shifts.Shift
       import Shift
       @behaviour Shift
+
+      def init(opts \\ []), do: init(%Shift{}, opts)
+
+      @impl Shift
+      def init(%Shift{} = shift, _opts), do: shift
+
+      defoverridable init: 2
     end
   end
 
@@ -67,8 +80,8 @@ defmodule Shifts.Shift do
     when is_function(callback, 2)
   do
     children = Enum.reduce(enum, [], fn value, shifts ->
-      child_shift = callback.(%__MODULE__{}, value)
-      [child_shift | shifts]
+      child_shift = put_in(shift.operations, [])
+      [callback.(child_shift, value) | shifts]
     end)
 
     add_operation(shift, name, {:async, children})
@@ -82,12 +95,22 @@ defmodule Shifts.Shift do
     when is_function(callback, 2)
   do
     children = Enum.reduce(enum, [], fn value, shifts ->
-      child_shift = callback.(%__MODULE__{}, value)
-      [child_shift | shifts]
+      child_shift = put_in(shift.operations, [])
+      [callback.(child_shift, value) | shifts]
     end)
 
     add_operation(shift, name, {:each, children})
   end
+
+  @doc """
+  TODO
+  """
+  @spec worker(t(), Worker.t() | keyword()) :: t()
+  def worker(%__MODULE__{} = shift, %Worker{} = worker),
+    do: update_in(shift.workers, & [worker | &1])
+
+  def worker(%__MODULE__{} = shift, opts) when is_list(opts),
+    do: worker(shift, Worker.new(opts))
 
 
   ### Internal

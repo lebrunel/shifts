@@ -4,14 +4,14 @@ defmodule Shifts.Chat do
   """
   require Logger
   require Shifts.Tool
-  alias Shifts.{Message, ChatResult, Shift, Tool}
+  alias Shifts.{Message, ChatResult, LLM, Shift, Tool}
 
   @enforce_keys [:llm]
   defstruct llm: nil, system: nil, tools: [], messages: [], final: false
 
   @typedoc "TODO"
   @type t() :: %__MODULE__{
-    llm: {module(), keyword()},
+    llm: LLM.adapter(),
     system: String.t() | nil,
     tools: list(Tool.t()),
     messages: list(Message.t() | t()),
@@ -21,7 +21,7 @@ defmodule Shifts.Chat do
   @doc """
   TODO
   """
-  @spec init({module(), keyword()}) :: t()
+  @spec init(LLM.adapter()) :: t()
   def init({module, args} = llm) when is_atom(module) and is_list(args),
     do: struct!(__MODULE__, llm: llm)
 
