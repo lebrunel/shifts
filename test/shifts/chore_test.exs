@@ -1,6 +1,5 @@
 defmodule Shifts.ChoreTest do
   use ExUnit.Case, async: true
-  alias Shifts.Worker
   alias Shifts.{Chore, Tool}
   doctest Chore
 
@@ -26,37 +25,15 @@ defmodule Shifts.ChoreTest do
     end
   end
 
-  describe "to_prompt/2" do
-    test "returns prompt string with input" do
-      prompt =
-        Chore.new(task: "a", output: "b")
-        |> Chore.to_prompt("x")
-
-      assert String.match?(prompt, ~r/^a\n\nInput: x\n\nThis is.+b$/s)
+  describe "to_prompt/1" do
+    test "returns prompt string with context" do
+      prompt = Chore.to_prompt(Chore.new(task: "a", output: "b", context: "c"))
+      assert String.match?(prompt, ~r/^a\n\nThis is.+\nc\n\nThis is.+b$/)
     end
 
-    test "returns prompt string without input" do
-      prompt =
-        Chore.new(task: "a", output: "b")
-        |> Chore.to_prompt()
-
-      assert String.match?(prompt, ~r/^a\n\nThis is.+b$/s)
-    end
-
-    test "returns worker system prompt" do
-      prompt =
-        Chore.new(task: "a", output: "b", worker: Worker.new(role: "a", goal: "b"))
-        |> Chore.to_prompt(:system)
-
-      assert String.match?(prompt, ~r/^Your role/s)
-    end
-
-    test "returns no system prompt without worker" do
-      prompt =
-        Chore.new(task: "a", output: "b")
-        |> Chore.to_prompt(:system)
-
-      assert is_nil(prompt)
+    test "returns prompt string without context" do
+      prompt = Chore.to_prompt(Chore.new(task: "a", output: "b"))
+      assert String.match?(prompt, ~r/^a\n\nThis is.+b$/)
     end
   end
 

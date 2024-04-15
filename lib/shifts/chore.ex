@@ -28,6 +28,10 @@ defmodule Shifts.Chore do
       required: true,
       doc: "todo"
     ],
+    context: [
+      type: :string,
+      doc: "todo"
+    ],
     tools: [
       type: {:list, {:or, [
         {:struct, Tool},
