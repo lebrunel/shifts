@@ -2,29 +2,27 @@ defmodule Shifts.Shift do
   @moduledoc """
   TODO
   """
-  alias Shifts.{Chore, Worker}
+  alias Shifts.{Chore, ShiftResult, Worker}
 
-  defstruct operations: [], workers: []
+  defstruct operations: [], workers: %{}
 
   @typedoc "TODO"
   @type t() :: %__MODULE__{
     operations: list({operation_name(), operation()}),
-    workers: list() # todo
+    workers: %{optional(worker_name()) => Worker.t()},
   }
 
   @type operation() ::
-    {Chore.t(), chore_input()} |
-    {:async, list(t())} |
-    {:each, list(t())}
+    {:task, Chore.t() | chore_fun()} |
+    {:each, list(t())} |
+    {:each_async, list(t())} |
+    {:run, run_fun()}
 
   @type operation_name() :: atom()
+  @type worker_name() :: atom()
 
-  @type chore_input() :: String.t() | operation_name() | (map() -> String.t())
-
-  defguard is_chore_input(input)
-    when is_binary(input)
-    or is_atom(input)
-    or is_function(input, 1)
+  @type chore_fun() :: (ShiftResult.outputs() -> Chore.t())
+  @type run_fun() :: (ShiftResult.outputs() -> term())
 
 
   ### Behaviour
@@ -41,16 +39,41 @@ defmodule Shifts.Shift do
 
   defmacro __using__(_) do
     quote do
+      Module.register_attribute(__MODULE__, :workers, accumulate: true)
       alias Shifts.Shift
       import Shift
       @behaviour Shift
+      @before_compile Shift
 
-      def init(opts \\ []), do: init(%Shift{}, opts)
+      def init(opts \\ []), do: init(shift(), opts)
 
       @impl Shift
       def init(%Shift{} = shift, _opts), do: shift
 
       defoverridable init: 2
+    end
+  end
+
+  defmacro __before_compile__(_) do
+    quote do
+      defp shift() do
+        Enum.reduce(@workers, %Shifts.Shift{}, fn {name, worker}, shift ->
+          update_in(shift.workers, & Map.put(&1, name, worker))
+        end)
+      end
+    end
+  end
+
+  @doc """
+  TODO
+  """
+  @spec worker(worker_name(), keyword()) :: Macro.t()
+  defmacro worker(name, opts \\ []) do
+    quote bind_quoted: [name: name, opts: opts] do
+      if name in Keyword.keys(@workers),
+        do: raise "worker names must be unique: `#{inspect name}` already used"
+      worker = Worker.new(opts)
+      Module.put_attribute(__MODULE__, :workers, {name, worker})
     end
   end
 
@@ -60,23 +83,8 @@ defmodule Shifts.Shift do
   @doc """
   TODO
   """
-  @spec chore(t(), operation_name(), chore_input(), Chore.t() | keyword()) :: t()
-  def chore(shift, name, input, opts \\ [])
-
-  def chore(%__MODULE__{} = shift, name, input, %Chore{} = chore)
-    when is_chore_input(input)
-  do
-    add_operation(shift, name, {chore, input})
-  end
-
-  def chore(%__MODULE__{} = shift, name, input, opts) when is_list(opts),
-    do: chore(shift, name, input, Chore.new(opts))
-
-  @doc """
-  TODO
-  """
-  @spec async(t(), operation_name(), Enumerable.t(), (t(), term() -> t())) :: t()
-  def async(%__MODULE__{} = shift, name, enum, callback)
+  @spec each_async(t(), operation_name(), Enumerable.t(), (t(), term() -> t())) :: t()
+  def each_async(%__MODULE__{} = shift, name, enum, callback)
     when is_function(callback, 2)
   do
     children = Enum.reduce(enum, [], fn value, shifts ->
@@ -84,7 +92,7 @@ defmodule Shifts.Shift do
       [callback.(child_shift, value) | shifts]
     end)
 
-    add_operation(shift, name, {:async, children})
+    add_operation(shift, name, {:each_async, children})
   end
 
   @doc """
@@ -105,12 +113,22 @@ defmodule Shifts.Shift do
   @doc """
   TODO
   """
-  @spec worker(t(), Worker.t() | keyword()) :: t()
-  def worker(%__MODULE__{} = shift, %Worker{} = worker),
-    do: update_in(shift.workers, & [worker | &1])
+  @spec run(t(), operation_name(), run_fun()) :: t()
+  def run(%__MODULE__{} = shift, name, run_fun) when is_function(run_fun, 1),
+    do: add_operation(shift, name, {:run, run_fun})
 
-  def worker(%__MODULE__{} = shift, opts) when is_list(opts),
-    do: worker(shift, Worker.new(opts))
+  @doc """
+  TODO
+  """
+  @spec task(t(), operation_name(), Chore.t() | keyword() | chore_fun()) :: t()
+  def task(%__MODULE__{} = shift, name, %Chore{} = chore),
+    do: add_operation(shift, name, {:task, chore})
+
+  def task(%__MODULE__{} = shift, name, chore_fun) when is_function(chore_fun, 1),
+    do: add_operation(shift, name, {:task, chore_fun})
+
+  def task(%__MODULE__{} = shift, name, opts) when is_list(opts),
+    do: task(shift, name, Chore.new(opts))
 
 
   ### Internal

@@ -23,9 +23,10 @@ defmodule Shifts.Templates do
   template :chore_prompt, """
   {{task}}
 
-  {{#input}}Input: {{input}}
+  {{#context}}This is the context you're working with:
+  {{context}}
 
-  {{/input}}
+  {{/context}}
   This is the expected output for your final answer: {{output}}
   """
 

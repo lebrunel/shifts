@@ -5,12 +5,13 @@ defmodule Shifts.Chore do
   alias Shifts.{Chat, ChatResult, LLM, Shift, Templates, Tool, Worker}
 
   @enforce_keys [:task, :output, :llm]
-  defstruct task: nil, output: nil, tools: [], worker: nil, llm: nil
+  defstruct task: nil, output: nil, context: nil, tools: [], worker: nil, llm: nil
 
   @typedoc "TODO"
   @type t() :: %__MODULE__{
     task: String.t(),
     output: String.t(),
+    context: String.t() | nil,
     tools: list(Tool.t()),
     worker: Worker.t() | nil,
     llm: LLM.adapter(),
@@ -36,7 +37,10 @@ defmodule Shifts.Chore do
       doc: "todo"
     ],
     worker: [
-      type: {:struct, Worker},
+      type: {:or, [
+        :atom,
+        {:struct, Worker},
+      ]},
       doc: "todo"
     ],
     llm: [
@@ -66,12 +70,12 @@ defmodule Shifts.Chore do
   @doc """
   TODO
   """
-  @spec execute(t(), String.t() | nil) :: ChatResult.t()
-  def execute(%__MODULE__{} = chore, input \\ nil) do
+  @spec execute(t()) :: ChatResult.t()
+  def execute(%__MODULE__{} = chore) do
     Chat.init(get_llm(chore))
-    |> Chat.put_system(to_prompt(chore, :system))
+    |> Chat.put_system(to_sys_prompt(chore))
     |> Chat.put_tools(get_tools(chore))
-    |> Chat.add_message(:user, to_prompt(chore, input))
+    |> Chat.add_message(:user, to_prompt(chore))
     |> Chat.generate_next_message()
     |> Chat.handle_tool_use(%Shift{}) # todo - needs to pass through actual shift
     |> Chat.finalize()
@@ -80,19 +84,12 @@ defmodule Shifts.Chore do
   @doc """
   TODO
   """
-  @spec to_prompt(t(), String.t() | :system | nil) :: String.t() | nil
-  def to_prompt(chore, input \\ nil)
-
-  def to_prompt(%__MODULE__{worker: %Worker{} = worker}, :system),
-    do: Worker.to_prompt(worker)
-
-  def to_prompt(%__MODULE__{}, :system), do: nil
-
-  def to_prompt(%__MODULE__{} = chore, input) do
+  @spec to_prompt(t()) :: String.t() | nil
+  def to_prompt(%__MODULE__{} = chore) do
     params = %{
       "task" => String.trim(chore.task),
       "output" => String.trim(chore.output),
-      "input" => input,
+      "context" => if(is_nil(chore.context), do: nil, else: String.trim(chore.context)),
     }
 
     Templates.get(:chore_prompt)
@@ -109,11 +106,18 @@ defmodule Shifts.Chore do
   defp get_llm(%__MODULE__{worker: %Worker{llm: llm}}), do: llm
   defp get_llm(%__MODULE__{llm: llm}), do: llm
 
+  # TODO
   @spec get_tools(t()) :: list(Tool.t())
   defp get_tools(%__MODULE__{
     tools: tools,
     worker: %Worker{tools: worker_tools}
   }), do: worker_tools ++ tools
   defp get_tools(%__MODULE__{tools: tools}), do: tools
+
+  # TODO
+  @spec to_sys_prompt(t()) :: String.t() | nil
+  defp to_sys_prompt(%__MODULE__{worker: %Worker{} = worker}),
+    do: Worker.to_prompt(worker)
+  defp to_sys_prompt(%__MODULE__{}), do: nil
 
 end

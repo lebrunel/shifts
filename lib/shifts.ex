@@ -39,65 +39,16 @@ defmodule Shifts do
 
   Documentation to follow...
   """
-  alias Shifts.{ChatResult, Chore, Shift, ShiftResult}
+  alias Shifts.{Shift.Runner, ShiftResult}
 
   @doc """
   TODO
   """
   @spec start_shift(module(), term(), keyword()) :: ShiftResult.t()
   def start_shift(shift_mod, input, opts \\ []) do
-    opts
-    |> shift_mod.init()
-    |> shift_mod.work(input)
-    |> process_shift()
+    shift_mod
+    |> Runner.init(input, opts)
+    |> Runner.run()
   end
-
-  @doc """
-  TODO
-  """
-  @spec process_shift(Shift.t()) :: ShiftResult.t()
-  def process_shift(%Shift{operations: operations} = shift) do
-    results =
-      operations
-      |> Enum.reverse()
-      |> Enum.reduce(%ShiftResult{shift: shift}, fn {name, operation}, results ->
-        result = process_operation(operation, results)
-        update_in(results.chats, & [{name, result} | &1])
-      end)
-
-    with {_name, %ChatResult{output: output}} <- hd(results.chats) do
-      results
-      |> Map.put(:output, output)
-      |> Map.update!(:chats, &Enum.reverse/1)
-    end
-  end
-
-  # TODO
-  # todo - handle each op
-  @spec process_operation(Shift.operation(), ShiftResult.t()) :: ChatResult.t() | list(ShiftResult.t())
-  defp process_operation(
-    {%Chore{} = chore, input_fun},
-    %ShiftResult{} = result
-  ) when is_function(input_fun, 1)
-  do
-    # todo - handle if the input function errors
-    input = input_fun.(ShiftResult.to_outputs(result))
-    process_operation({chore, input}, result)
-  end
-
-  defp process_operation({%Chore{} = chore, input}, %ShiftResult{})
-    when is_binary(input),
-    do: Chore.execute(chore, input)
-
-  defp process_operation({:async, shifts}, %ShiftResult{}) do
-    shifts
-    |> Enum.map(fn shift ->
-      Task.async(fn -> process_shift(shift) end)
-    end)
-    |> Task.await_many(:infinity)
-  end
-
-  defp process_operation({:each, shifts}, %ShiftResult{}),
-    do: Enum.map(shifts, &process_shift/1)
 
 end
