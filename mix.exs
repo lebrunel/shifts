@@ -7,7 +7,7 @@ defmodule Shifts.MixProject do
       name: "Shifts",
       description: "An Elixir framework for composing autonomous AI agent workflows, using a mixture of LLM backends.",
       source_url: "https://github.com/lebrunel/shifts",
-      version: "0.0.1",
+      version: "0.0.2",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
