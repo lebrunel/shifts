@@ -21,7 +21,7 @@ defmodule Shifts.Tools.ReadWebPageTest do
       """
     }
     with_mock Req, get!: fn _url -> response end do
-      res = Tool.execute(tool, %{url: "http://test.com"})
+      res = Tool.invoke(tool, %{url: "http://test.com"})
       assert String.match?(res, ~r/^# Hello world!\n\nIncididunt ut/)
     end
   end
@@ -29,7 +29,7 @@ defmodule Shifts.Tools.ReadWebPageTest do
   test "returns error for http error", %{tool: tool} do
     response = %Req.Response{status: 404}
     with_mock Req, get!: fn _url -> response end do
-      res = Tool.execute(tool, %{url: "http://test.com"})
+      res = Tool.invoke(tool, %{url: "http://test.com"})
       assert String.match?(res, ~r/^HTTPError.+404$/)
     end
   end
