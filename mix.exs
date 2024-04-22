@@ -37,8 +37,10 @@ defmodule Shifts.MixProject do
       {:ex_doc, "~> 0.32", only: :dev, runtime: false},
       {:ex_mustache, "~> 0.2"},
       {:jason, "~> 1.4"},
+      {:mock, "~> 0.3", only: :test},
       {:nimble_options, "~> 1.1"},
       {:ollama, "~> 0.5"},
+      {:readability, "~> 0.12"},
     ]
   end
 

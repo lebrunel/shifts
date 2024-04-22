@@ -70,11 +70,49 @@ defmodule Shifts.Tool do
   @doc """
   TODO
   """
+  @spec invoke(t(), args()) :: String.t()
+  def invoke(%__MODULE__{} = tool, args) when is_map(args),
+    do: invoke(tool, %Shift{}, args)
+
+  def invoke(%__MODULE__{params: params} = tool, %Shift{} = shift, args) when is_map(args) do
+    param_names = Enum.map(params, & elem(&1, 0))
+    try do
+      args = Enum.reduce(args, %{}, & normalize_arg(&2, &1, param_names))
+      apply(tool.function, [shift, args])
+    rescue
+      e ->
+        "#{inspect e.__struct__}: #{Exception.message(e)}"
+    end
+  end
+
+  # TODO
+  defp normalize_arg(args, {key, val}, param_names) when is_atom(key) do
+    if key in param_names do
+      Map.put(args, key, val)
+    else
+      # todo - log this as the llm has given a non-existing arg name
+      args
+    end
+  end
+
+  defp normalize_arg(args, {key, val}, param_names) do
+    try do
+      normalize_arg(args, {String.to_existing_atom(key), val}, param_names)
+    rescue
+      ArgumentError ->
+        # todo - log this as the llm has given a non-existing arg name
+        args
+    end
+  end
+
+  @doc """
+  TODO
+  """
   @spec use_tools(list(t() | module())) :: list(t())
   def use_tools(tools) when is_list(tools) do
     Enum.map(tools, fn
       %__MODULE__{} = tool -> tool
-      mod when is_atom(mod) -> apply(mod, :to_struct, [])
+      mod when is_atom(mod) -> mod.to_tool()
     end)
   end
 
@@ -83,7 +121,7 @@ defmodule Shifts.Tool do
   """
   @spec validate_mod(term()) :: {:ok, term()} | {:error, String.t()}
   def validate_mod(tool_mod) do
-    if is_atom(tool_mod) and :erlang.function_exported(tool_mod, :to_struct, 0),
+    if is_atom(tool_mod) and :erlang.function_exported(tool_mod, :to_tool, 0),
       do: {:ok, tool_mod},
       else: {:error, "must be a module that implements the Tool behaviour"}
   end
@@ -146,7 +184,9 @@ defmodule Shifts.Tool do
   defmacro __using__(_) do
     quote do
       tool_name =
-        inspect(__MODULE__) |> String.replace(".", "_")
+        inspect(__MODULE__)
+        |> String.split(".")
+        |> List.last()
 
       Module.put_attribute(__MODULE__, :name, tool_name)
       Module.register_attribute(__MODULE__, :description, accumulate: false)
@@ -168,7 +208,7 @@ defmodule Shifts.Tool do
         function: &__MODULE__.call/2,
       ])
 
-      def to_struct(), do: @tool
+      def to_tool(), do: @tool
     end
   end
 

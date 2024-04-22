@@ -89,7 +89,7 @@ defmodule Shifts.Chat do
     message = Enum.reduce(records, Message.new(role: :user), fn {:tool_use, id, name, input}, msg ->
       # todo - handle if tool raises
       with %Tool{} = tool <- Enum.find(tools, & &1.name == name) do
-        output = apply(tool.function, [shift, input])
+        output = Tool.invoke(tool, shift, input)
         # todo - assert tool returns with string
         result = Tool.tool_result(id: id, name: name, output: output)
         Message.put_record(msg, result)
