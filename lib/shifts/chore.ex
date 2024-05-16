@@ -1,8 +1,11 @@
 defmodule Shifts.Chore do
-
+  @moduledoc """
+  TODO
+  """
   @enforce_keys [:task]
   defstruct task: nil, output: nil, context: nil, tools: [], worker: nil, llm: nil
 
+  @typedoc "TODO"
   @type t() :: %__MODULE__{
     task: String.t(),
     output: String.t() | nil,
