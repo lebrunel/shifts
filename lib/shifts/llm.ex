@@ -2,7 +2,7 @@ defmodule Shifts.LLM do
   @moduledoc """
   TODO
   """
-  alias Shifts.Chat
+  alias Shifts.{Chat, Message}
 
   @typedoc "TODO"
   @type adapter() :: {module(), keyword()}
@@ -18,7 +18,7 @@ defmodule Shifts.LLM do
   @doc """
   TODO
   """
-  @callback get_message(response()) :: Chat.message()
+  @callback get_message(response()) :: Message.t()
 
   @doc """
   TODO

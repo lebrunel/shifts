@@ -24,3 +24,6 @@ shifts-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# Playground for ad-hoc testing and monkeying about
+/playground

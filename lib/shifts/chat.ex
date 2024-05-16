@@ -3,7 +3,7 @@ defmodule Shifts.Chat do
   TODO
   """
   require Record
-  alias Shifts.{Config, LLM}
+  alias Shifts.{Config, LLM, Message}
 
   @enforce_keys [:llm]
   defstruct status: :pending, llm: nil, system: nil, tools: [], messages: []
@@ -17,14 +17,10 @@ defmodule Shifts.Chat do
     llm: LLM.adapter(),
     system: String.t() | nil,
     tools: list(),
-    messages: list(message()),
+    messages: list(Message.t()),
   }
 
   @typedoc "TODO"
-  @type message() ::
-    record(:user_message, content: String.t(), records: list()) |
-    record(:chatbot_message, content: String.t(), records: list())
-
   @type status() :: :pending | :ready | :done
 
   @doc """
@@ -72,10 +68,10 @@ defmodule Shifts.Chat do
   @doc """
   TODO
   """
-  @spec add_message(t(), message()) :: t()
+  @spec add_message(t(), Message.t()) :: t()
   def add_message(
     %__MODULE__{status: status} = chat,
-    {role, _content, _records} = message
+    %Message{role: role} = message
   )
     when (role == :user and status != :ready)
     or (role == :chatbot and status == :ready)
