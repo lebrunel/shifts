@@ -85,6 +85,11 @@ defmodule Shifts.Chat do
     |> Map.put(:status, new_status)
   end
 
+  @spec add_message(t(), Message.role(), String.t()) :: t()
+  def add_message(%__MODULE__{} = chat, role, content) do
+    add_message(chat, Message.new(role: role, content: content))
+  end
+
   @doc """
   TODO
   """
