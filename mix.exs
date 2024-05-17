@@ -33,10 +33,12 @@ defmodule Shifts.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:anthropix, "~> 0.3", optional: true},
+      {:anthropix, "~> 0.3"},
       {:ex_doc, "~> 0.32", only: :dev, runtime: false},
+      {:mock, "~> 0.3", only: :test},
       {:nimble_options, "~> 1.1"},
-      {:ollama, "~> 0.6", optional: true},
+      {:ollama, "~> 0.6"},
+      {:readability, "~> 0.12"},
     ]
   end
 
