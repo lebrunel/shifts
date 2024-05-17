@@ -4,10 +4,22 @@ defmodule Shifts.MixProject do
   def project do
     [
       app: :shifts,
-      version: "0.1.0",
-      elixir: "~> 1.16",
+      name: "Shifts",
+      description: "An Elixir framework for composing autonomous AI agent workflows, using a mixture of LLM backends.",
+      source_url: "https://github.com/lebrunel/shifts",
+      version: "0.0.2",
+      elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      docs: docs(),
+      package: [
+        name: "shifts",
+        files: ~w(lib .formatter.exs mix.exs README.md LICENSE),
+        licenses: ["Apache-2.0"],
+        links: %{
+          "GitHub" => "https://github.com/lebrunel/shifts"
+        }
+      ]
     ]
   end
 
@@ -27,4 +39,15 @@ defmodule Shifts.MixProject do
       {:ollama, "~> 0.6", optional: true},
     ]
   end
+
+  # ExDoc config
+  defp docs do
+    [
+      main: "Shifts",
+      groups_for_modules: [
+        "LLM Adapters": ~r/^Shifts\.LLM\..+$/
+      ]
+    ]
+  end
+
 end
