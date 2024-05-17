@@ -19,13 +19,37 @@ defmodule Shifts.Chat do
   @typedoc "TODO"
   @type status() :: :pending | :ready | :done
 
+  @schema NimbleOptions.new!([
+    system: [
+      type: :string,
+      doc: "todo"
+    ],
+    tools: [
+      type: {:list, :any},
+      doc: "todo"
+    ],
+    llm: [
+      type: :mod_arg,
+      doc: "todo"
+    ]
+  ])
+
+  @doc false
+  @spec schema() :: NimbleOptions.t()
+  def schema(), do: @schema
+
   @doc """
   TODO
   """
-  @spec init(LLM.adapter() | nil) :: t()
-  def init(nil), do: Config.get(:default_llm) |> init()
-  def init({module, args} = llm) when is_atom(module) and is_list(args),
-    do: struct!(__MODULE__, llm: llm)
+  @spec new(keyword()) :: t()
+  def new(opts \\ []) do
+    opts =
+      opts
+      |> NimbleOptions.validate!(@schema)
+      |> Keyword.put_new(:llm, Config.get(:default_llm))
+
+    struct!(__MODULE__, opts)
+  end
 
   @doc """
   TODO

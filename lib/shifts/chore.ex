@@ -2,7 +2,7 @@ defmodule Shifts.Chore do
   @moduledoc """
   TODO
   """
-  alias Shifts.{Chat, LLM}
+  alias Shifts.{Chat, LLM, Worker}
 
   @enforce_keys [:task]
   defstruct task: nil, output: nil, context: nil, tools: [], worker: nil, llm: nil
@@ -13,7 +13,7 @@ defmodule Shifts.Chore do
     output: String.t() | nil,
     context: String.t() | nil,
     tools: list(),
-    worker: nil,
+    worker: Worker.t() | nil,
     llm: LLM.adapter() | nil,
   }
 
@@ -29,6 +29,10 @@ defmodule Shifts.Chore do
     ],
     context: [
       type: :string,
+      doc: "todo"
+    ],
+    worker: [
+      type: {:struct, Worker},
       doc: "todo"
     ],
     llm: [
@@ -54,11 +58,37 @@ defmodule Shifts.Chore do
   end
 
   def exec(%__MODULE__{} = chore) do
-    Chat.init(get_llm(chore))
-    |> Chat.put_system(get_system_prompt(chore))
-    |> Chat.put_tools(get_tools(chore))
+    init_chat(chore)
     |> Chat.add_message(:user, get_prompt(chore))
     |> Chat.generate_next_message()
+  end
+
+  @doc """
+  TODO
+  """
+  @spec init_chat(t()) :: Chat.t()
+  def init_chat(%__MODULE__{worker: %Worker{} = worker} = chore) do
+    opts = case {worker.llm, chore.llm} do
+      {nil, nil} -> []
+      {nil, llm} -> [llm: llm]
+      {llm, _llm} -> [llm: llm]
+    end
+
+    opts
+    |> Keyword.put(:system, Worker.get_prompt(worker))
+    |> Keyword.put(:tools, worker.tools ++ chore.tools)
+    |> Chat.new()
+  end
+
+  def init_chat(%__MODULE__{} = chore) do
+    opts = case chore.llm do
+      nil -> []
+      llm -> [llm: llm]
+    end
+
+    opts
+    |> Keyword.put(:tools, chore.tools)
+    |> Chat.new()
   end
 
   @doc """
@@ -76,24 +106,5 @@ defmodule Shifts.Chore do
     |> Enum.reject(&is_nil/1)
     |> Enum.join("\n\n")
   end
-
-  # TODO
-  @spec get_llm(t()) :: LLM.adapter()
-  #defp get_llm(%__MODULE__{worker: %Worker{llm: llm}}), do: llm
-  defp get_llm(%__MODULE__{llm: llm}), do: llm
-
-  # TODO
-  @spec get_system_prompt(t()) :: String.t() | nil
-  #defp get_system_prompt(%__MODULE__{worker: %Worker{} = worker}),
-  #  do: Worker.get_prompt(worker)
-  defp get_system_prompt(%__MODULE__{}), do: nil
-
-  # TODO
-  @spec get_tools(t()) :: list()
-  #defp get_tools(%__MODULE__{
-  #  tools: tools,
-  #  worker: %Worker{tools: worker_tools}
-  #}), do: worker_tools ++ tools
-  defp get_tools(%__MODULE__{tools: tools}), do: tools
 
 end
