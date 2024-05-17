@@ -2,14 +2,10 @@ defmodule Shifts.Chat do
   @moduledoc """
   TODO
   """
-  require Record
   alias Shifts.{Config, LLM, Message}
 
   @enforce_keys [:llm]
   defstruct status: :pending, llm: nil, system: nil, tools: [], messages: []
-
-  Record.defrecord(:user_message, :user, content: nil, records: [])
-  Record.defrecord(:chatbot_message, :chatbot, content: nil, records: [])
 
   @typedoc "TODO"
   @type t() :: %__MODULE__{
@@ -30,24 +26,6 @@ defmodule Shifts.Chat do
   def init(nil), do: Config.get(:default_llm) |> init()
   def init({module, args} = llm) when is_atom(module) and is_list(args),
     do: struct!(__MODULE__, llm: llm)
-
-  @doc """
-  TODO
-  """
-  @spec get_input(t()) :: String.t()
-  def get_input(%__MODULE__{status: status, messages: messages}) when status != :pending do
-    user_message(content: content) = Enum.at(messages, 0)
-    content
-  end
-
-  @doc """
-  TODO
-  """
-  @spec get_output(t()) :: String.t()
-  def get_output(%__MODULE__{status: status, messages: messages}) when status == :done do
-    chatbot_message(content: content) = Enum.at(messages, -1)
-    content
-  end
 
   @doc """
   TODO

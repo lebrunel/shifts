@@ -3,6 +3,7 @@ defmodule Shifts.Shift do
   TODO
   """
   alias Shifts.{Chore, Job}
+  alias Shifts.Job.Cell
 
   @enforce_keys [:mod]
   defstruct mod: nil, workers: []
@@ -14,14 +15,14 @@ defmodule Shifts.Shift do
   }
 
   @typedoc "TODO"
-  @type on_next() :: {:cont, Job.phase_name(), Job.t()} | {:halt, Job.t()}
+  @type on_next() :: {:cont, Cell.name(), Job.t()} | {:halt, Job.t()}
 
   @doc """
   TODO
   """
-  @callback start_job(name :: Job.name(), job:: Job.t()) :: on_next()
+  @callback handle_start(name :: Job.name(), job:: Job.t()) :: on_next()
 
-  @callback handle_cell(name :: Job.phase_name(), job :: Job.t()) :: on_next()
+  @callback handle_cell(name :: Cell.name(), job :: Job.t()) :: on_next()
 
   @callback handle_chore(name :: Job.chore_name(), job :: Job.t()) ::
     {:ok, String.t() | keyword() | Chore.t()} |
@@ -46,21 +47,21 @@ defmodule Shifts.Shift do
       @behaviour Shifts.Shift
       @before_compile Shifts.Shift
 
-      @spec start_job(Job.name()) :: {:ok, Job.t()} | {:error, term()}
-      def start_job(name) when is_atom(name) do
+      @spec start_job(Job.name(), input :: any()) :: {:ok, Job.t()} | {:error, term()}
+      def start_job(name, input) when is_atom(name) do
         job =
           Job
-          |> struct!(name: name, shift: shift())
+          |> struct!(name: name, shift: shift(), input: input)
           |> Job.open_cell()
 
-        loop(start_job(name, job))
+        loop(handle_start(name, job))
       end
 
-      def start_job(name, job), do: {:halt, job}
+      def handle_start(name, job), do: {:halt, job}
       def handle_cell(name, job), do: {:halt, job}
       def handle_chore(name, job), do: {:error, :todo}
 
-      defoverridable start_job: 2, handle_cell: 2, handle_chore: 2
+      defoverridable handle_start: 2, handle_cell: 2, handle_chore: 2
 
       # TODO
       defp loop({:next, name, job}) do

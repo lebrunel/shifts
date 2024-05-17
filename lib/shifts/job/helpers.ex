@@ -1,5 +1,5 @@
 defmodule Shifts.Job.Helpers do
-  alias Shifts.{Chore, Job}
+  alias Shifts.{Chat, ChatResult, Chore, Job}
 
   @spec exec(Job.t(), list(Job.chore_name())) :: Job.t()
   def exec(%Job{} = job, names) when is_list(names) do
@@ -18,6 +18,36 @@ defmodule Shifts.Job.Helpers do
       chat = Chore.exec(chore)
       Job.push_to_cell(job, {:exec, name, chat})
     end
+  end
+
+  @spec get_all(Job.t()) :: list(ChatResult.t())
+  def get_all(%Job{} = job) do
+    Keyword.values(Job.get_state(job))
+  end
+
+  @spec get_all(Job.t(), Job.chore_name()) :: list(ChatResult.t())
+  def get_all(%Job{} = job, name) do
+    Keyword.get_values(Job.get_state(job), name)
+  end
+
+  @spec get_first(Job.t()) :: ChatResult.t()
+  def get_first(%Job{} = job) do
+    get_all(job) |> hd()
+  end
+
+  @spec get_first(Job.t(), Job.chore_name()) :: ChatResult.t()
+  def get_first(%Job{} = job, name) do
+    Keyword.get(Job.get_state(job), name)
+  end
+
+  @spec get_last(Job.t()) :: Chat.t()
+  def get_last(%Job{} = job) do
+    Enum.reverse(get_all(job)) |> hd()
+  end
+
+  @spec get_last(Job.t(), Job.chore_name()) :: ChatResult.t()
+  def get_last(%Job{} = job, name) do
+    Keyword.get(Enum.reverse(Job.get_state(job)), name)
   end
 
 end

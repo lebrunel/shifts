@@ -14,7 +14,7 @@ defmodule Shifts.Chore do
     context: String.t() | nil,
     tools: list(),
     worker: nil,
-    llm: nil,
+    llm: LLM.adapter() | nil,
   }
 
   @schema NimbleOptions.new!([
@@ -31,6 +31,10 @@ defmodule Shifts.Chore do
       type: :string,
       doc: "todo"
     ],
+    llm: [
+      type: :mod_arg,
+      doc: "todo"
+    ]
   ])
 
   @doc false
@@ -54,6 +58,7 @@ defmodule Shifts.Chore do
     |> Chat.put_system(get_system_prompt(chore))
     |> Chat.put_tools(get_tools(chore))
     |> Chat.add_message(:user, get_prompt(chore))
+    |> Chat.generate_next_message()
   end
 
   @doc """

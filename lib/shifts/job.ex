@@ -1,5 +1,5 @@
 defmodule Shifts.Job do
-  alias Shifts.{Chat, Shift}
+  alias Shifts.{ChatResult, Shift}
   alias Shifts.Job.Cell
 
   @behaviour Access
@@ -8,21 +8,17 @@ defmodule Shifts.Job do
   defdelegate pop(struct, key), to: Map
 
   @enforce_keys [:name, :shift]
-  defstruct name: nil, shift: nil, tape: []
+  defstruct name: nil, shift: nil, input: nil, tape: []
 
   @type t() :: %__MODULE__{
     name: name(),
     shift: Shift.t(),
+    input: any(),
     tape: list(Cell.t()),
   }
 
   @type name() :: atom()
   @type chore_name() :: term()
-
-  @type phase() :: {:phase, list(), phase_end()}
-  @type phase_name() :: term()
-  @type phase_end() :: :unknown | :halt | {:next, phase_name()}
-
 
   @spec open_cell(t()) :: t()
   def open_cell(%__MODULE__{} = job) do
@@ -43,10 +39,10 @@ defmodule Shifts.Job do
     end)
   end
 
-  @spec get_state(t()) :: list({chore_name(), Chat.t()})
+  @spec get_state(t()) :: list({chore_name(), ChatResult.t()})
   def get_state(%__MODULE__{tape: tape}) do
     Enum.flat_map(tape, fn cell ->
-      Enum.map(cell.instructions, & Tuple.delete_at(&1, 0))
+      Enum.map(cell.instructions, fn {_, name, chat} -> {name, ChatResult.new(chat)} end)
     end)
   end
 
