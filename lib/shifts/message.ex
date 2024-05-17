@@ -62,4 +62,5 @@ defmodule Shifts.Message do
   def put_record(%__MODULE__{} = msg, tool_record) do
     update_in(msg.records, & List.insert_at(&1, -1, tool_record))
   end
+
 end

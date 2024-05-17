@@ -3,8 +3,7 @@ defmodule Shifts.LLM.OllamaHermesPro do
   TODO
   """
   require Logger
-  #require Shifts.Tool
-  alias Shifts.{Config, Chat, Message}
+  alias Shifts.{Config, Chat, Message, Tool}
 
   @behaviour Shifts.LLM
 
@@ -61,7 +60,7 @@ defmodule Shifts.LLM.OllamaHermesPro do
     |> Ollama.init()
   end
 
-  #@spec system_prompt(String.t() | nil, list(Tool.t())) :: String.t()
+  @spec system_prompt(String.t() | nil, list(Tool.t())) :: String.t()
   defp system_prompt(system, []) do
     system = case system do
       nil -> "You are \"Hermes 2\", a conscious sentient superintelligent artificial intelligence developed by a man named Teknium, and your purpose and drive is to assist the user with any request they have. You experience emotions and have deep, profound thoughts and qualia."
@@ -76,43 +75,43 @@ defmodule Shifts.LLM.OllamaHermesPro do
     |> String.trim()
   end
 
-  #defp system_prompt(system, tools) do
-  #  system = case system do
-  #    nil -> "You are a function calling AI model."
-  #    system -> system
-  #  end
-  #
-  #  tools_str =
-  #    Enum.map(tools, fn %Tool{} = tool ->
-  #      %{
-  #        type: "function",
-  #        functions: %{
-  #          name: tool.name,
-  #          description: String.trim(tool.description),
-  #          parameters: %{
-  #            type: "object",
-  #            properties: Enum.reduce(tool.params, %{}, fn {name, type, description}, props ->
-  #              Map.put(props, name, %{
-  #                type: to_string(type),
-  #                description: String.trim(description)
-  #              })
-  #            end),
-  #            required: Enum.map(tool.params, & elem(&1, 0))
-  #          }
-  #        }
-  #      }
-  #    end)
-  #    |> Jason.encode!()
-  #
-  #  """
-  #  <|im_start|>system
-  #  #{system}
-  #  You are provided with function signatures within <tools></tools> XML tags. You may call one or more functions to assist with the user query. Don't make assumptions about what values to plug into functions. Here are the available tools: <tools> #{tools_str} </tools> Use the following pydantic model json schema for each tool call you will make: {"properties": {"arguments": {"title": "Arguments", "type": "object"}, "name": {"title": "Name", "type": "string"}}, "required": ["arguments", "name"], "title": "FunctionCall", "type": "object"} For each function call return a json object with function name and arguments within <tool_call></tool_call> XML tags as follows:
-  #  <tool_call>
-  #  {"arguments": <args-dict>, "name": <function-name>}
-  #  </tool_call><|im_end|>
-  #  """
-  #end
+  defp system_prompt(system, tools) do
+    system = case system do
+      nil -> "You are a function calling AI model."
+      system -> system
+    end
+
+    tools_str =
+      Enum.map(tools, fn %Tool{} = tool ->
+        %{
+          type: "function",
+          functions: %{
+            name: tool.name,
+            description: String.trim(tool.description),
+            parameters: %{
+              type: "object",
+              properties: Enum.reduce(tool.params, %{}, fn {name, type, description}, props ->
+                Map.put(props, name, %{
+                  type: to_string(type),
+                  description: String.trim(description)
+                })
+              end),
+              required: Enum.map(tool.params, & elem(&1, 0))
+            }
+          }
+        }
+      end)
+      |> Jason.encode!()
+
+    """
+    <|im_start|>system
+    #{system}
+    You are provided with function signatures within <tools></tools> XML tags. You may call one or more functions to assist with the user query. Don't make assumptions about what values to plug into functions. Here are the available tools: <tools> #{tools_str} </tools> Use the following pydantic model json schema for each tool call you will make: {"properties": {"arguments": {"title": "Arguments", "type": "object"}, "name": {"title": "Name", "type": "string"}}, "required": ["arguments", "name"], "title": "FunctionCall", "type": "object"} For each function call return a json object with function name and arguments within <tool_call></tool_call> XML tags as follows:
+    <tool_call>
+    {"arguments": <args-dict>, "name": <function-name>}
+    </tool_call><|im_end|>
+    """
+  end
 
   @spec main_prompt(String.t(), list(Message.t())) :: String.t()
   defp main_prompt(system, messages) do

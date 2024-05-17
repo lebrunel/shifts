@@ -2,7 +2,7 @@ defmodule Shifts.Chore do
   @moduledoc """
   TODO
   """
-  alias Shifts.{Chat, LLM, Worker}
+  alias Shifts.{Chat, LLM, Tool, Worker}
 
   @enforce_keys [:task]
   defstruct task: nil, output: nil, context: nil, tools: [], worker: nil, llm: nil
@@ -33,6 +33,11 @@ defmodule Shifts.Chore do
     ],
     worker: [
       type: {:struct, Worker},
+      doc: "todo"
+    ],
+    tools: [
+      type: {:list, {:custom, Tool, :validate_tool, []}},
+      default: [],
       doc: "todo"
     ],
     llm: [

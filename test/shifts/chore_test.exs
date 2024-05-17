@@ -1,6 +1,6 @@
 defmodule Shifts.ChoreTest do
   use ExUnit.Case, async: true
-  alias Shifts.{Chore, Worker}
+  alias Shifts.{Chore, Tool, Worker}
   doctest Chore
 
   describe "new/1" do
@@ -10,6 +10,19 @@ defmodule Shifts.ChoreTest do
 
     test "raises with invalid opts" do
       assert_raise NimbleOptions.ValidationError, fn -> Chore.new() end
+    end
+
+    test "accepts a list of tool structs or modules" do
+      tools = [Tool.new(name: "a", description: "b", function: fn _a -> "c" end), TestTool]
+      assert %Chore{} = chore = Chore.new(task: "a", tools: tools)
+      assert length(chore.tools) == 2
+      assert Enum.all?(chore.tools, & match?(%Tool{}, &1))
+    end
+
+    test "raises with invalid tool" do
+      assert_raise NimbleOptions.ValidationError, ~r/implements the Tool behaviour/, fn ->
+        Chore.new(task: "a", tools: [NotATool])
+      end
     end
   end
 

@@ -2,7 +2,7 @@ defmodule Shifts.Worker do
   @moduledoc """
   TODO
   """
-  alias Shifts.{LLM}
+  alias Shifts.{LLM, Tool}
 
   @enforce_keys [:role, :goal, :llm]
   defstruct role: nil, goal: nil, story: nil, tools: [], llm: nil
@@ -29,6 +29,11 @@ defmodule Shifts.Worker do
     ],
     story: [
       type: :string,
+      doc: "todo"
+    ],
+    tools: [
+      type: {:list, {:custom, Tool, :validate_tool, []}},
+      default: [],
       doc: "todo"
     ],
     llm: [

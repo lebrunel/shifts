@@ -2,8 +2,7 @@ defmodule Shifts.LLM.Anthropic do
   @moduledoc """
   TODO
   """
-  #require Shifts.Tool
-  alias Shifts.{Config, Chat, Message}
+  alias Shifts.{Config, Chat, Message, Tool}
 
   @behaviour Shifts.LLM
 
@@ -12,7 +11,7 @@ defmodule Shifts.LLM.Anthropic do
     opts =
       opts
       |> Keyword.put(:system, chat.system)
-      #|> Keyword.put(:tools, tool_params(chat.tools))
+      |> Keyword.put(:tools, tool_params(chat.tools))
       |> Keyword.put(:messages, message_params(chat.messages))
       |> remove_blank_opts([:system, :tools])
 
@@ -88,23 +87,23 @@ defmodule Shifts.LLM.Anthropic do
     end)
   end
 
-  #@spec tool_params(list(Tool.t())) :: list(Anthropix.tool())
-  #defp tool_params(tools) do
-  #  Enum.map(tools, fn %Tool{} = tool ->
-  #    %{
-  #      name: tool.name,
-  #      description: String.trim(tool.description),
-  #      input_schema: %{
-  #        type: "object",
-  #        properties: Enum.reduce(tool.params, %{}, fn {name, type, description}, props ->
-  #          Map.put(props, name, %{
-  #            type: to_string(type),
-  #            description: String.trim(description),
-  #          })
-  #        end)
-  #      }
-  #    }
-  #  end)
-  #end
+  @spec tool_params(list(Tool.t())) :: list(Anthropix.tool())
+  defp tool_params(tools) do
+    Enum.map(tools, fn %Tool{} = tool ->
+      %{
+        name: tool.name,
+        description: String.trim(tool.description),
+        input_schema: %{
+          type: "object",
+          properties: Enum.reduce(tool.params, %{}, fn {name, type, description}, props ->
+            Map.put(props, name, %{
+              type: to_string(type),
+              description: String.trim(description),
+            })
+          end)
+        }
+      }
+    end)
+  end
 
 end
