@@ -1,7 +1,12 @@
 defmodule Shifts.ChoreTest do
   use ExUnit.Case, async: true
-  alias Shifts.{Chore, Tool, Worker}
+  import Mock
+  alias Shifts.{Chore, Chat, Tool, Worker}
   doctest Chore
+
+  Application.put_env(:shifts, Shifts.LLM.Anthropic, [
+    api_key: "test"
+  ])
 
   describe "new/1" do
     test "creates a chore with valid opts" do
@@ -62,7 +67,36 @@ defmodule Shifts.ChoreTest do
       chat = Chore.init_chat(chore)
       assert is_binary(chat.system)
     end
+  end
 
+  describe "exec/1" do
+    test "executes the chore and returns a chat" do
+      response = %{
+        "id" => "msg_01YNpZt8R398nui7m9vF7Kro",
+        "type" => "message",
+        "role" => "assistant",
+        "model" => "claude-3-haiku-20240307",
+        "stop_sequence" => nil,
+        "usage" => %{
+          "input_tokens" => 13,
+          "output_tokens" => 29,
+        },
+        "content" => [%{
+          "type" => "text",
+          "text" => "Feline grace and charm,\nPurring softly by the fire,\nCats, masters of poise.",
+        }],
+        "stop_reason" => "end_turn",
+      }
+      with_mock Anthropix, [
+        init: fn  _key -> nil end,
+        chat: fn _client, _opts -> {:ok, response} end
+      ] do
+        chore = Chore.new(task: "Write a haiku about cats")
+        assert %Chat{} = chat = Chore.exec(chore)
+        assert length(chat.messages) == 2
+        assert Enum.at(chat.messages, -1) |> Map.get(:content) == "Feline grace and charm,\nPurring softly by the fire,\nCats, masters of poise."
+      end
+    end
   end
 
 end

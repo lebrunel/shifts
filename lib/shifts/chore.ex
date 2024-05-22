@@ -62,6 +62,10 @@ defmodule Shifts.Chore do
     struct!(__MODULE__, opts)
   end
 
+  @doc """
+  TODO
+  """
+  @spec exec(t()) :: Chat.t()
   def exec(%__MODULE__{} = chore) do
     init_chat(chore)
     |> Chat.add_message(:user, get_prompt(chore))
